@@ -46,21 +46,21 @@ def Dlist(request):
                     # send_mail(subject, message, email_from, recipient_list)
 
                     # Alert WhatsApp
-                    account_sid = '# votre SID'
-                    auth_token = '# votre token '
-                    client = Client(account_sid, auth_token)
-                    message_whatsapp = client.messages.create(
-                        from_='whatsapp:+14155238886',
-                        body='La température dépasse le seuil de 25°C, veuillez intervenir immédiatement pour vérifier et corriger cette situation',
-                        to='whatsapp:+212644059938'
-                    )
+                    # account_sid = '# votre SID'
+                    # auth_token = '# votre token '
+                    # client = Client(account_sid, auth_token)
+                    # message_whatsapp = client.messages.create(
+                    #     from_='whatsapp:+14155238886',
+                    #     body='La température dépasse le seuil de 25°C, veuillez intervenir immédiatement pour vérifier et corriger cette situation',
+                    #     to='whatsapp:+212644059938'
+                    # )
 
-                    # Alert Telegram
-                    telegram_token = '#votre token '
-                    chat_id = '# votre ID de chat'  # Remplacez par votre ID de chat
-                    telegram_message = 'La température dépasse le seuil de 25°C, veuillez intervenir immédiatement pour vérifier et corriger cette situation'
-                    send_telegram_message(telegram_token, chat_id, telegram_message)
-
+                    # # Alert Telegram
+                    # telegram_token = '#votre token '
+                    # chat_id = '# votre ID de chat'  # Remplacez par votre ID de chat
+                    # telegram_message = 'La température dépasse le seuil de 25°C, veuillez intervenir immédiatement pour vérifier et corriger cette situation'
+                    # send_telegram_message(telegram_token, chat_id, telegram_message)
+                    pass
                 return Response(serial.data, status=status.HTTP_201_CREATED)
 
             else:
