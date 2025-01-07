@@ -20,17 +20,32 @@ from django.contrib.auth.forms import UserCreationForm
 
 def home(request):
     return render(request, 'home.html')
+from django.shortcuts import render
+from django.utils import timezone
+from .models import Dht11
 
 def table(request):
-    derniere_ligne = Dht11.objects.last()
-    derniere_date = Dht11.objects.last().dt
-    delta_temps = timezone.now() - derniere_date
-    difference_minutes = delta_temps.seconds // 60
-    temps_ecoule = ' il y a ' + str(difference_minutes) + ' min'
-    if difference_minutes > 60:
-        temps_ecoule = 'il y ' + str(difference_minutes // 60) + 'h' + str(difference_minutes % 60) + 'min'
-    valeurs = {'date': temps_ecoule, 'id': derniere_ligne.id, 'temp': derniere_ligne.temp, 'hum': derniere_ligne.hum}
-    return render(request, 'value.html', {'valeurs': valeurs})
+    # Récupérer toutes les lignes de la table
+    toutes_les_lignes = Dht11.objects.all().order_by('-dt')  # Trier par date décroissante
+
+    # Calculer le temps écoulé pour la dernière ligne
+    derniere_ligne = toutes_les_lignes.first()  # Récupérer la dernière entrée
+    if derniere_ligne:
+        derniere_date = derniere_ligne.dt
+        delta_temps = timezone.now() - derniere_date
+        difference_minutes = delta_temps.seconds // 60
+        temps_ecoule = f"il y a {difference_minutes} min"
+        if difference_minutes > 60:
+            temps_ecoule = f"il y a {difference_minutes // 60}h {difference_minutes % 60}min"
+    else:
+        temps_ecoule = "Aucune donnée disponible"
+
+    # Envoyer toutes les données au template
+    return render(request, 'value.html', {
+        'toutes_les_lignes': toutes_les_lignes,
+        'temps_ecoule': temps_ecoule
+    })
+
 
 def download_csv(request):
     model_values = Dht11.objects.all()
@@ -62,6 +77,7 @@ def chart_data(request):
         'humidity': [Hum.hum for Hum in dht]
     }
     return JsonResponse(data)
+
 def chart_data(request):
     dht = Dht11.objects.all()
 
@@ -129,22 +145,30 @@ def chart_data_mois(request):
     }
     return JsonResponse(data)
 
-
-
-def register(request):
-    if request.method == 'POST':
-        form = UserCreationForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('login')
-    else:
-        form = UserCreationForm()
-    return render(request, 'register.html', {'form': form})
-
-
 def sendtele():
     token = '6662023260:AAG4z48OO9gL8A6szdxg0SOma5hv9gIII1E'
     rece_id = 1242839034
     bot = telepot.Bot(token)
     bot.sendMessage(rece_id, 'la température depasse la normale')
     print(bot.sendMessage(rece_id, 'OK.'))
+
+def login_view(request):
+    if request.method == 'POST':
+        username = request.POST['username']
+        password = request.POST['password']
+        user = authenticate(request, username=username, password=password)
+        print(user)
+        if user is not None:
+            login(request, user)
+            return redirect('table')  # Redirect to the main page after login
+        else:
+            return render(request, 'home.html', {'error': 'Invalid username or password'})
+    return render(request, 'home.html')
+
+
+def logout_view(request):
+    """
+    Logs out the user and redirects them to the homepage or login page.
+    """
+    logout(request)
+    return redirect('home')  # Redirect to 'home' or 'login' after logout

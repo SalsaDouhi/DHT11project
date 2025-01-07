@@ -1,22 +1,47 @@
 {% extends 'base.html' %}
 
 {% block i %}
-<div class="graphique">
-    <div class="navb">
-        <button id="aujourdhui-link">Historique d'Aujourd'hui</button>
-        <button id="semaine-link">Historique de cette semaine</button>
-        <button id="mois-link">Historique de ce mois</button>
-        <!--button id="csv">Télecharger csv</button-->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<div class="container my-5">
+    <div class="row mb-4">
+        <div class="col text-center">
+            <h3>Graphiques d'Humidité</h3>
+        </div>
     </div>
-    <div class="graphique-hum">
-        <canvas id="graphique-hum" height="220"></canvas>
+    <div class="row mb-4">
+        <div class="col text-center">
+            <button id="aujourdhui-link" class="btn btn-primary mx-2">Aujourd'hui</button>
+            <button id="semaine-link" class="btn btn-secondary mx-2">Semaine</button>
+            <button id="mois-link" class="btn btn-secondary mx-2">Mois</button>
+        </div>
+    </div>
+    <div class="row">
+        <!-- Graphique en Ligne -->
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h5 class="card-title text-center">Graphique en Ligne</h5>
+                    <canvas id="line-chart" height="150"></canvas>
+                </div>
+            </div>
+        </div>
+        <!-- Graphique en Barres -->
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h5 class="card-title text-center">Graphique en Barres</h5>
+                    <canvas id="bar-chart" height="150"></canvas>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.min.js"></script>
 <script>
-    // Fonction pour créer un graphique avec des données spécifiques
-    function createChart(url, borderWidth) {
+    // Fonction pour créer différents types de graphiques
+    function createCharts(url) {
         fetch(url)
             .then(response => response.json())
             .then(data => {
@@ -26,18 +51,20 @@
                 if (startIndex < 0) startIndex = 0;
                 labels = labels.slice(startIndex);
                 dataValues = dataValues.slice(startIndex);
-                var ctx = document.getElementById('graphique-hum').getContext('2d');
-                var myChart = new Chart(ctx, {
+
+                // Graphique en Ligne
+                var lineCtx = document.getElementById('line-chart').getContext('2d');
+                new Chart(lineCtx, {
                     type: 'line',
                     data: {
                         labels: labels,
                         datasets: [{
-                            label: 'La valeur de Humidité',
+                            label: 'Humidité (%)',
                             data: dataValues,
-                            backgroundColor: 'white',
-                            borderColor: 'rgb(0,0,255)',
-                            borderWidth: borderWidth,
-                            pointStyle: 'circles',
+                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                            borderColor: 'rgb(54, 162, 235)',
+                            borderWidth: 2,
+                            pointStyle: 'circle',
                             pointRadius: 2,
                             pointBorderColor: 'black'
                         }]
@@ -48,21 +75,52 @@
                                 ticks: {
                                     beginAtZero: true,
                                     min: 0,
-                                    max: 80, // Limiter l'axe des y à 80%
-                                    callback: function(value, index, values) {
+                                    max: 100,
+                                    callback: function(value) {
                                         return value + '%';
-                                    },
+                                    }
                                 }
                             }],
                             xAxes: [{
                                 ticks: {
-                                    beginAtZero: true,
-                                    display: true,
                                     autoSkip: true,
-                                    maxTicksLimit: 20,
-                                    callback: function(value, index, values) {
-                                        return value;
+                                    maxTicksLimit: 10
+                                }
+                            }]
+                        }
+                    }
+                });
+
+                // Graphique en Barres
+                var barCtx = document.getElementById('bar-chart').getContext('2d');
+                new Chart(barCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Humidité (%)',
+                            data: dataValues,
+                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                            borderColor: 'rgb(255, 99, 132)',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            yAxes: [{
+                                ticks: {
+                                    beginAtZero: true,
+                                    min: 0,
+                                    max: 100,
+                                    callback: function(value) {
+                                        return value + '%';
                                     }
+                                }
+                            }],
+                            xAxes: [{
+                                ticks: {
+                                    autoSkip: true,
+                                    maxTicksLimit: 10
                                 }
                             }]
                         }
@@ -71,25 +129,41 @@
             });
     }
 
-    // Écouteurs d'événements pour les boutons
-    const aujourdhuiLink = document.getElementById('aujourdhui-link');
-    const semaineLink = document.getElementById('semaine-link');
-    const moisLink = document.getElementById('mois-link');
+    // Gestion des boutons pour activer/désactiver les styles
+    const buttons = {
+        today: document.getElementById('aujourdhui-link'),
+        week: document.getElementById('semaine-link'),
+        month: document.getElementById('mois-link')
+    };
 
-    aujourdhuiLink.addEventListener('click', () => {
-        createChart('/chart-data-jour/', 1);
+    function setActiveButton(activeButton) {
+        for (let key in buttons) {
+            buttons[key].classList.remove('btn-primary');
+            buttons[key].classList.add('btn-secondary');
+        }
+        activeButton.classList.remove('btn-secondary');
+        activeButton.classList.add('btn-primary');
+    }
+
+    // Ajouter des écouteurs pour chaque bouton
+    buttons.today.addEventListener('click', () => {
+        setActiveButton(buttons.today);
+        createCharts('/chart-data-jour/');
     });
 
-    semaineLink.addEventListener('click', () => {
-        createChart('/chart-data-semaine/', 2);
+    buttons.week.addEventListener('click', () => {
+        setActiveButton(buttons.week);
+        createCharts('/chart-data-semaine/');
     });
 
-    moisLink.addEventListener('click', () => {
-        createChart('/chart-data-mois/', 3);
+    buttons.month.addEventListener('click', () => {
+        setActiveButton(buttons.month);
+        createCharts('/chart-data-mois/');
     });
 
-    // Charge initiale du graphique avec /chart-data/
-    createChart('/chart-data/', 4);
+    // Chargement initial avec le bouton "Aujourd'hui"
+    setActiveButton(buttons.today);
+    createCharts('/chart-data/');
 </script>
-
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
 {% endblock %}
